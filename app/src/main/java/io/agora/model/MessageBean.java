@@ -1,6 +1,7 @@
 package io.agora.model;
 
 import io.agora.rtm.RtmMessage;
+import io.agora.utils.DateParser;
 
 public class MessageBean {
     private String account;
@@ -8,6 +9,7 @@ public class MessageBean {
     private String cacheFile;
     private int background;
     private boolean beSelf;
+    private String chatTime;
 
     public MessageBean(String account, RtmMessage message, boolean beSelf) {
         this.account = account;
@@ -53,5 +55,13 @@ public class MessageBean {
 
     public void setBeSelf(boolean beSelf) {
         this.beSelf = beSelf;
+    }
+
+    public String getChatTime() {
+        return chatTime;
+    }
+
+    public long getTimeStamp() {
+        return System.currentTimeMillis();
     }
 }

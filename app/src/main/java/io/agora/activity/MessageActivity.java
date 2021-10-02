@@ -1,13 +1,13 @@
 package io.agora.activity;
 
-import static io.agora.adapter.MessageAdapter.setOnViewHolderClickedListener;
-import static io.agora.adapter.MessageAdapter.setOnViewHolderClickedListener2;
+
 import io.agora.activity.ChatProfileOptionMenuDialogFragment;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -29,12 +29,14 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.theartofdev.edmodo.cropper.CropImage;
 
+import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
-import io.agora.adapter.MessageAdapter;
+
 import io.agora.model.MessageBean;
 import io.agora.model.MessageListBean;
 import io.agora.rtm.ErrorInfo;
@@ -56,6 +58,8 @@ import io.agora.rtmtutorial.ChatManager;
 import io.agora.rtmtutorial.R;
 import io.agora.utils.ImageUtil;
 import io.agora.utils.MessageUtil;
+import io.agora.activity.MessageAdapter.OnViewHolderClickedListener;
+import io.agora.activity.MessageAdapter.OnViewHolderClickedListener2;
 
 public class MessageActivity extends Activity {
     private final String TAG = MessageActivity.class.getSimpleName();
@@ -92,6 +96,11 @@ public class MessageActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_message);
+        mRecyclerView = findViewById(R.id.message_list);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        getTasks();
+
         init();
     }
 
@@ -100,6 +109,12 @@ public class MessageActivity extends Activity {
         mRtmClient = mChatManager.getRtmClient();
         mClientListener = new MyRtmClientListener();
         mChatManager.registerListener(mClientListener);
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(MessageActivity.this);
+        layoutManager.setOrientation(RecyclerView.VERTICAL);
+
+
+
 
         Intent intent = getIntent();
         mIsPeerToPeerMode = intent.getBooleanExtra(MessageUtil.INTENT_EXTRA_IS_PEER_MODE, true);
@@ -130,35 +145,14 @@ public class MessageActivity extends Activity {
             createAndJoinChannel();
         }
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        layoutManager.setOrientation(RecyclerView.VERTICAL);
-        mMessageAdapter = new MessageAdapter(this, mMessageBeanList, message -> {
-            if (message.getMessage().getMessageType() == RtmMessageType.IMAGE) {
-                if (!TextUtils.isEmpty(message.getCacheFile())) {
-                    Glide.with(this).load(message.getCacheFile()).into(mBigImage);
-                    mBigImage.setVisibility(View.VISIBLE);
-                } else {
-                    ImageUtil.cacheImage(this, mRtmClient, (RtmImageMessage) message.getMessage(), new ResultCallback<String>() {
-                        @Override
-                        public void onSuccess(String file) {
-                            message.setCacheFile(file);
-                            runOnUiThread(() -> {
-                                Glide.with(MessageActivity.this).load(file).into(mBigImage);
-                                mBigImage.setVisibility(View.VISIBLE);
-                            });
-                        }
+        Calendar calendar = Calendar.getInstance();
+        String currentDate = DateFormat.getDateInstance().format(calendar.getTime());
+        TextView textViewDate = findViewById(R.id.text_view_date);
+        textViewDate.setText(currentDate);
 
-                        @Override
-                        public void onFailure(ErrorInfo errorInfo) {
 
-                        }
-                    });
-                }
-            }
-        });
-        mRecyclerView = findViewById(R.id.message_list);
-        mRecyclerView.setLayoutManager(layoutManager);
-        mRecyclerView.setAdapter(mMessageAdapter);
+
+
 
         mMsgEditText = findViewById(R.id.message_edittiext);
         mBigImage = findViewById(R.id.big_image);
@@ -250,7 +244,7 @@ public class MessageActivity extends Activity {
         });
 
         // Reply My Msg
-        setOnViewHolderClickedListener(new MessageAdapter.OnViewHolderClickedListener() {
+        mMessageAdapter.setOnViewHolderClickedListener(new MessageAdapter.OnViewHolderClickedListener() {
             @Override
             public void onViewHolderClicked() {
                 System.out.println("LongClick in MainActivity");
@@ -260,7 +254,7 @@ public class MessageActivity extends Activity {
         });
 
         // Reply Other Msg
-        setOnViewHolderClickedListener2(new MessageAdapter.OnViewHolderClickedListener2() {
+        mMessageAdapter.setOnViewHolderClickedListener2(new MessageAdapter.OnViewHolderClickedListener2() {
             @Override
             public void onViewHolderClicked2() {
                 System.out.println("LongClick in MainActivity");
@@ -271,19 +265,106 @@ public class MessageActivity extends Activity {
 
     }
 
-//    private FragmentManager getSupportFragmentManager() {
-//        return null;
-//    }
+
+    public void getTasks() {
+
+        class GetTasks extends AsyncTask<Void, Void, List<ChatDatabaseHelper>> {
+
+            @Override
+            protected List<ChatDatabaseHelper> doInBackground(Void... voids) {
+                List<ChatDatabaseHelper> taskList = DatabaseClient
+                        .getInstance(getApplicationContext())
+                        .getAppDatabase()
+                        .chatDao()
+                        .getAll();
+                return taskList;
+            }
+
+            @Override
+            protected void onPostExecute(List<ChatDatabaseHelper> tasks) {
+                super.onPostExecute(tasks);
+
+                System.out.println("tasks "+ tasks);
+                mMessageAdapter = new MessageAdapter(MessageActivity.this, mMessageBeanList, tasks, message -> {});
+                mRecyclerView.setAdapter(mMessageAdapter);
+//
+//                MessageBean messageBean = new MessageBean(mUserId, message, true);
+//                mMessageBeanList.add(messageBean);
+//                mMessageAdapter.notifyItemRangeChanged(mMessageBeanList.size(), 1);
+                //mRecyclerView.scrollToPosition(mMessageBeanList.size() - 1);
+
+            }
+        }
+
+        GetTasks gt = new GetTasks();
+        gt.execute();
+
+    }
+
+    private void saveTask(String userId, String peerId, String chatmsg) {
+
+
+//        if (sTask.isEmpty()) {
+//            editTextTask.setError("Task required");
+//            editTextTask.requestFocus();
+//            return;
+//        }
+//
+//        if (sDesc.isEmpty()) {
+//            editTextDesc.setError("Desc required");
+//            editTextDesc.requestFocus();
+//            return;
+//        }
+//
+//        if (sFinishBy.isEmpty()) {
+//            editTextFinishBy.setError("Finish by required");
+//            editTextFinishBy.requestFocus();
+//            return;
+//        }
+
+        class SaveTask extends AsyncTask<Void, Void, Void> {
+
+            @Override
+            protected Void doInBackground(Void... voids) {
+
+                //creating a task
+                ChatDatabaseHelper task = new ChatDatabaseHelper();
+                task.setUserId(userId);
+                task.setPeerId(peerId);
+                task.setMessage(chatmsg);
+
+
+                //adding to database
+                DatabaseClient.getInstance(getApplicationContext()).getAppDatabase()
+                        .chatDao()
+                        .insert(task);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+//                finish();
+//                startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                Toast.makeText(getApplicationContext(), "Saved", Toast.LENGTH_LONG).show();
+            }
+        }
+
+        SaveTask st = new SaveTask();
+        st.execute();
+    }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mIsPeerToPeerMode) {
-            MessageUtil.addMessageListBeanList(new MessageListBean(mPeerId, mMessageBeanList));
-        } else {
-            leaveAndReleaseChannel();
-        }
-        mChatManager.unregisterListener(mClientListener);
+        MessageUtil.addMessageListBeanList(new MessageListBean(mPeerId, mMessageBeanList));
+
+//        if (mIsPeerToPeerMode) {
+//            MessageUtil.addMessageListBeanList(new MessageListBean(mPeerId, mMessageBeanList));
+//        } else {
+//            leaveAndReleaseChannel();
+//        }
+//        mChatManager.unregisterListener(mClientListener);
     }
 
     @Override
@@ -330,6 +411,8 @@ public class MessageActivity extends Activity {
                 if (!msg.equals("")) {
                     RtmMessage message = mRtmClient.createMessage();
                     message.setText(msg);
+                    System.out.println("Message ''"+ message.getText() + "'' from >" + mUserId + "< to *" + mPeerId+"*");
+                    saveTask(mUserId, mPeerId, message.getText());
 
                     MessageBean messageBean = new MessageBean(mUserId, message, true);
                     mMessageBeanList.add(messageBean);
@@ -352,6 +435,9 @@ public class MessageActivity extends Activity {
                 break;
         }
     }
+
+
+
 
     public void onClickFinish(View v) {
         finish();
@@ -387,6 +473,7 @@ public class MessageActivity extends Activity {
                 });
             }
         });
+        System.out.println("sendPeerMessage "+ mPeerId + "message " + message + "mUserId " + mUserId);
     }
 
     /**

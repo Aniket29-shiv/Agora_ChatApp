@@ -123,7 +123,7 @@ public class ChatManager {
         mSendMsgOptions.enableOfflineMessaging = enabled;
     }
 
-    public void enableHistoricalMessaging(boolean enabled) {
+    public void enableHistoricalMessage(boolean enabled) {
         mSendMsgOptions.enableHistoricalMessaging  = enabled;
     }
 
@@ -135,6 +135,9 @@ public class ChatManager {
         return mSendMsgOptions;
     }
 
+    public List<RtmMessage> getAllHistoryMessages(String peerId) {
+        return mMessagePool.getAllHistoryMessages(peerId);
+    }
     public List<RtmMessage> getAllOfflineMessages(String peerId) {
         return mMessagePool.getAllOfflineMessages(peerId);
     }
@@ -142,4 +145,6 @@ public class ChatManager {
     public void removeAllOfflineMessages(String peerId) {
         mMessagePool.removeAllOfflineMessages(peerId);
     }
+
+
 }

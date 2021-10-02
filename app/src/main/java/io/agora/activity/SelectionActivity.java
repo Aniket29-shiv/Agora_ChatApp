@@ -1,22 +1,16 @@
 package io.agora.activity;
 
-import static android.view.View.GONE;
 import static io.agora.adapter.UserAdapter.setOnViewHolderClickedListener;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioButton;
@@ -27,7 +21,6 @@ import android.widget.Toast;
 import androidx.appcompat.widget.AppCompatCheckBox;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -38,11 +31,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import io.agora.adapter.MessageAdapter;
 import io.agora.adapter.UserAdapter;
 import io.agora.model.ItemChatProfileModel;
 import io.agora.model.MessageBean;
-import io.agora.model.MyListData;
 import io.agora.rtm.RtmClient;
 import io.agora.rtmtutorial.AGApplication;
 import io.agora.rtmtutorial.ChatManager;
@@ -151,9 +142,9 @@ public class SelectionActivity extends Activity implements UserAdapter.OnCardInf
         recyclerView.addItemDecoration(itemDecorator);
         List<ItemChatProfileModel> list = new ArrayList<>();
         list.add(new ItemChatProfileModel("Ani", "Insta pe follow kiya??", false, "1", "7:49 am", ""));
-        list.add(new ItemChatProfileModel("Ayesha", "Hii...", true, "0", "7:49 am", ""));
-        list.add(new ItemChatProfileModel("Kajal", "Kaise hue??", true, "0", "7:49 am", ""));
-        list.add(new ItemChatProfileModel("Avini", "Let’s meet tom...", true, "0", "7:49 am", ""));
+        list.add(new ItemChatProfileModel("Mohit", "Hii...", true, "0", "7:49 am", ""));
+        list.add(new ItemChatProfileModel("Sagar", "Kaise hue??", true, "0", "7:49 am", ""));
+        list.add(new ItemChatProfileModel("Shiv", "Let’s meet tom...", true, "0", "7:49 am", ""));
         list.add(new ItemChatProfileModel("Natasha", "Have you heard this song?", true, "0", "7:49 am", ""));
 
         adapter = new UserAdapter(list, this);

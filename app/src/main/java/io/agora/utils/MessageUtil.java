@@ -62,6 +62,9 @@ public class MessageUtil {
 
     public static void addMessageBean(String account, RtmMessage msg) {
         MessageBean messageBean = new MessageBean(account, msg, false);
+
+        System.out.println("RTMessage "+ messageBean);
+
         int ret = existMessageListBean(account);
         if (ret == -1) {
             // account not exist new messagelistbean

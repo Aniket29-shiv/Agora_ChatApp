@@ -12,6 +12,7 @@ import io.agora.rtm.RtmMessage;
  */
 public class RtmMessagePool {
     private Map<String, List<RtmMessage>> mOfflineMessageMap = new HashMap<>();
+    private Map<String, List<RtmMessage>> mHistoryMessageMap = new HashMap<>();
 
     void insertOfflineMessage(RtmMessage rtmMessage, String peerId) {
         boolean contains = mOfflineMessageMap.containsKey(peerId);
@@ -33,5 +34,24 @@ public class RtmMessagePool {
 
     void removeAllOfflineMessages(String peerId) {
         mOfflineMessageMap.remove(peerId);
+    }
+
+//    Message History.
+    void insertHistoryMessage(RtmMessage rtmMessage, String peerId) {
+        boolean contains = mHistoryMessageMap.containsKey(peerId);
+        List<RtmMessage> list = contains ? mHistoryMessageMap.get(peerId) : new ArrayList<>();
+
+        if (list != null) {
+            list.add(rtmMessage);
+        }
+
+        if (!contains) {
+            mHistoryMessageMap.put(peerId, list);
+        }
+    }
+
+    List<RtmMessage> getAllHistoryMessages(String peerId) {
+        return mHistoryMessageMap.containsKey(peerId) ?
+                mHistoryMessageMap.get(peerId) : new ArrayList<>();
     }
 }
